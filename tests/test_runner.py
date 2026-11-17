@@ -13,6 +13,7 @@ from tests.fakes import (
     BASE_URL,
     FakeAssessor,
     FakeHelpdeskServer,
+    FakeReviser,
     FakeVerifier,
     ListRunLog,
     load_kb,
@@ -37,6 +38,7 @@ def make_runner(server, tmp_path, assessor=None, limits=None, run_id="r1"):
     decider = TicketDecider(
         assessor=assessor,
         verifier=FakeVerifier(),
+        reviser=FakeReviser(),
         policy=TicketPolicy(kb, PolicyConfig()),
         knowledge_base=kb,
         model_id="test-model",

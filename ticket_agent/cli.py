@@ -26,6 +26,7 @@ from ticket_agent.infrastructure.anthropic_model import AnthropicJsonModel
 from ticket_agent.infrastructure.helpdesk_client import HelpdeskClient
 from ticket_agent.infrastructure.llm import (
     JsonModel,
+    LlmReplyReviser,
     LlmReplyVerifier,
     LlmTicketAssessor,
     Pricing,
@@ -33,7 +34,7 @@ from ticket_agent.infrastructure.llm import (
 from ticket_agent.infrastructure.openai_compatible_model import OpenAICompatibleJsonModel
 from ticket_agent.infrastructure.resilience import RateLimiter, RetryPolicy
 from ticket_agent.infrastructure.storage import JsonDecisionStore, JsonlRunLog
-from ticket_agent.prompts import ASSESS_PROMPT, VERIFY_PROMPT
+from ticket_agent.prompts import ASSESS_PROMPT, REVISE_PROMPT, VERIFY_PROMPT
 
 logger = logging.getLogger("ticket_agent")
 
@@ -162,6 +163,7 @@ def _build_decider(settings: Settings) -> TicketDecider:
     return TicketDecider(
         assessor=LlmTicketAssessor(model, knowledge_base),
         verifier=LlmReplyVerifier(model),
+        reviser=LlmReplyReviser(model),
         policy=TicketPolicy(knowledge_base, PolicyConfig(settings.confidence_threshold)),
         knowledge_base=knowledge_base,
         model_id=f"{settings.llm_provider}:{settings.model_name}:{settings.llm_effort}",
@@ -225,7 +227,7 @@ def _write_eval_result(path: Path, report: EvalReport, settings: Settings) -> No
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "provider": settings.llm_provider,
         "model": settings.model_name,
-        "prompts": [ASSESS_PROMPT, VERIFY_PROMPT],
+        "prompts": [ASSESS_PROMPT, VERIFY_PROMPT, REVISE_PROMPT],
         "effort": settings.llm_effort,
         "summary": report.summary(),
         "examples": [r.to_row() for r in report.results],

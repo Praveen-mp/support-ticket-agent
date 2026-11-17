@@ -47,6 +47,19 @@ class ReplyVerifier(Protocol):
     ) -> ModelResult[ReplyCheck]: ...
 
 
+class ReplyReviser(Protocol):
+    """Rewrites a draft once to fix named problems. The result is checked again from scratch."""
+
+    def revise(
+        self,
+        ticket: Ticket,
+        draft_reply: str,
+        language: Language,
+        articles: list[FaqArticle],
+        problems: list[str],
+    ) -> ModelResult[str]: ...
+
+
 class Helpdesk(Protocol):
     def list_open_tickets(self, max_tickets: int) -> list[Ticket]: ...
 

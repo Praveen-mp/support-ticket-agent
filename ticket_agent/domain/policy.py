@@ -181,12 +181,23 @@ class TicketPolicy:
         keyword_topics: frozenset[SensitiveTopic],
     ) -> list[str]:
         """Every reason why the proposed reply must not be sent. Empty list means it may be."""
+        return self.eligibility_blockers(assessment, keyword_topics) + self.draft_problems(
+            ticket, assessment
+        )
+
+    def eligibility_blockers(
+        self, assessment: Assessment, keyword_topics: frozenset[SensitiveTopic]
+    ) -> list[str]:
+        """Reasons the ticket may not get an automatic reply at all. A redraft cannot fix
+        these: they are about the ticket, not about the wording of the draft."""
         blockers: list[str] = []
         topics = set(assessment.sensitive_topics) | keyword_topics
         if topics:
             blockers.append("always-human topic: " + ", ".join(sorted(topics)))
         if assessment.is_spam_or_empty:
             blockers.append("model marked the ticket as spam or empty")
+        if assessment.priority is Priority.P1:
+            blockers.append("P1 tickets always go to a human")
         if not assessment.fully_answered_by_faq:
             blockers.append("the FAQ does not fully answer the question")
         unknown_ids = [i for i in assessment.faq_ids if self._kb.get(i) is None]
@@ -199,6 +210,12 @@ class TicketPolicy:
                 f"confidence {assessment.confidence:.2f} below "
                 f"{self._config.confidence_threshold:.2f}"
             )
+        return blockers
+
+    def draft_problems(self, ticket: Ticket, assessment: Assessment) -> list[str]:
+        """Problems with the draft itself: wrong language, too long, or a URL, number or
+        payment detail the cited articles do not support. A redraft can fix these."""
+        blockers: list[str] = []
         draft = assessment.draft_reply.strip()
         if not draft:
             blockers.append("empty draft reply")

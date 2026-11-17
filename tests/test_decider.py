@@ -1,16 +1,30 @@
-from tests.fakes import FakeAssessor, FakeVerifier, load_kb, make_assessment
+from tests.fakes import FakeAssessor, FakeReviser, FakeVerifier, load_kb, make_assessment
 from ticket_agent.application.decider import TicketDecider
 from ticket_agent.domain.models import Action, Ticket
 from ticket_agent.domain.policy import PolicyConfig, TicketPolicy
 
+ENGLISH_F12_REPLY = (
+    "Hi, the Roosterly app works on iOS 16 and later, so it does not run on iOS 15. "
+    "Please update the phone to iOS 16 or later, or use another phone. "
+    "Kind regards, the Roosterly team"
+)
+CRASH_TICKET = Ticket(
+    id="T1",
+    subject="App crashes",
+    body="The app crashes immediately on my iPhone 8 (iOS 15). Other staff are fine.",
+)
 
-def make_decider(assessor=None, verifier=None) -> tuple[TicketDecider, FakeAssessor, FakeVerifier]:
+
+def make_decider(
+    assessor=None, verifier=None, reviser=None
+) -> tuple[TicketDecider, FakeAssessor, FakeVerifier]:
     kb = load_kb()
     assessor = assessor or FakeAssessor()
     verifier = verifier or FakeVerifier()
     decider = TicketDecider(
         assessor=assessor,
         verifier=verifier,
+        reviser=reviser or FakeReviser(),
         policy=TicketPolicy(kb, PolicyConfig()),
         knowledge_base=kb,
         model_id="test-model",
@@ -83,16 +97,72 @@ def test_fingerprint_changes_with_ticket_text():
 
 
 def test_mislabelled_english_ticket_is_corrected_and_dutch_draft_blocked():
+    # The reviser hands the Dutch draft back unchanged, so it stays blocked.
     decider, _, verifier = make_decider(
         assessor=FakeAssessor(lambda _t: make_assessment(language="nl", faq_ids=("F12",)))
     )
-    ticket = Ticket(
-        id="T1",
-        subject="App crashes",
-        body="The app crashes immediately on my iPhone 8 (iOS 15). Other staff are fine.",
-    )
-    outcome = decider.decide(ticket)
+    outcome = decider.decide(CRASH_TICKET)
     assert outcome.decision.language.value == "en"
     assert outcome.decision.action is Action.HANDOFF
     assert outcome.policy_notes[0] == "language corrected from nl to en by text check"
     assert verifier.calls == 0
+
+
+def test_draft_in_wrong_language_is_rewritten_and_then_sent():
+    reviser = FakeReviser(new_draft=ENGLISH_F12_REPLY)
+    decider, _, verifier = make_decider(
+        assessor=FakeAssessor(lambda _t: make_assessment(language="nl", faq_ids=("F12",))),
+        reviser=reviser,
+    )
+    outcome = decider.decide(CRASH_TICKET)
+    assert outcome.decision.action is Action.REPLY
+    assert outcome.decision.draft_reply == ENGLISH_F12_REPLY
+    assert reviser.problems_seen == [["draft is in nl, customer wrote in en"]]
+    assert verifier.calls == 1
+    assert any(n.startswith("draft rewritten once") for n in outcome.policy_notes)
+    assert outcome.usage.calls == 3
+
+
+def test_failed_reply_check_is_rewritten_once_and_verified_again():
+    verifier = FakeVerifier(
+        problems=("claim not in FAQ: link arrives in 10 minutes",), failing_calls=1
+    )
+    reviser = FakeReviser(
+        new_draft="Hoi, ga naar Team → Medewerker toevoegen. Groet, Team Roosterly"
+    )
+    decider, _, _ = make_decider(verifier=verifier, reviser=reviser)
+    outcome = decider.decide(Ticket(id="T1", subject="Vraag", body="Hoe voeg ik iemand toe?"))
+    assert outcome.decision.action is Action.REPLY
+    assert verifier.drafts[1] == outcome.decision.draft_reply
+    assert reviser.problems_seen == [["reply check: claim not in FAQ: link arrives in 10 minutes"]]
+    assert outcome.reply_check is not None and outcome.reply_check.passed
+
+
+def test_rewrite_happens_at_most_once():
+    reviser = FakeReviser()
+    decider, _, verifier = make_decider(
+        verifier=FakeVerifier(problems=("claim not in FAQ: x",)), reviser=reviser
+    )
+    outcome = decider.decide(Ticket(id="T1", subject="Vraag", body="Hoe voeg ik iemand toe?"))
+    assert outcome.decision.action is Action.HANDOFF
+    assert len(reviser.problems_seen) == 1
+    assert verifier.calls == 2
+
+
+def test_ineligible_ticket_is_never_rewritten():
+    reviser = FakeReviser(new_draft=ENGLISH_F12_REPLY)
+    decider, _, verifier = make_decider(reviser=reviser)
+    outcome = decider.decide(Ticket(id="T1", subject="Refund", body="Ik wil een terugbetaling."))
+    assert outcome.decision.action is Action.HANDOFF
+    assert reviser.problems_seen == []
+    assert verifier.calls == 0
+
+
+def test_p1_ticket_never_gets_an_automatic_reply():
+    decider, _, verifier = make_decider(
+        assessor=FakeAssessor(lambda _t: make_assessment(priority="P1"))
+    )
+    outcome = decider.decide(Ticket(id="T1", subject="Vraag", body="Hoe voeg ik iemand toe?"))
+    assert outcome.decision.action is Action.HANDOFF
+    assert verifier.calls == 0
+    assert any("P1 tickets always go to a human" in n for n in outcome.policy_notes)

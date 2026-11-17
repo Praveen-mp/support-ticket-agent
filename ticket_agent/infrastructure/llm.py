@@ -27,7 +27,7 @@ from ticket_agent.domain.models import (
     Ticket,
     Usage,
 )
-from ticket_agent.prompts import ASSESS_PROMPT, VERIFY_PROMPT, load_prompt
+from ticket_agent.prompts import ASSESS_PROMPT, REVISE_PROMPT, VERIFY_PROMPT, load_prompt
 
 Effort = Literal["low", "medium", "high"]
 
@@ -112,10 +112,9 @@ class LlmReplyVerifier:
         expected_language: Language,
         articles: list[FaqArticle],
     ) -> ModelResult[ReplyCheck]:
-        article_text = "\n\n".join(f"## {a.id} · {a.title}\n{a.text}" for a in articles)
         user = (
             f"{format_ticket(ticket)}\n\n"
-            f"<help_centre_articles>\n{article_text}\n</help_centre_articles>\n\n"
+            f"{format_articles(articles)}\n\n"
             f"<draft_reply>\n{_neutralise(draft_reply, 'draft_reply')}\n</draft_reply>"
         )
         data, usage = self._model.call(self._system, user, VERIFY_SCHEMA)
@@ -130,6 +129,39 @@ class LlmReplyVerifier:
         except (KeyError, TypeError) as exc:
             raise ModelError(f"reply check does not fit the schema: {exc}", usage.cost_usd) from exc
         return ModelResult(value=check, usage=usage)
+
+
+class LlmReplyReviser:
+    def __init__(self, model: JsonModel) -> None:
+        self._model = model
+        self._system = load_prompt(REVISE_PROMPT)
+
+    def revise(
+        self,
+        ticket: Ticket,
+        draft_reply: str,
+        language: Language,
+        articles: list[FaqArticle],
+        problems: list[str],
+    ) -> ModelResult[str]:
+        problem_list = "\n".join(f"- {_neutralise(p, 'problems')}" for p in problems)
+        user = (
+            f"{format_ticket(ticket)}\n\n"
+            f"{format_articles(articles)}\n\n"
+            f"<draft_reply>\n{_neutralise(draft_reply, 'draft_reply')}\n</draft_reply>\n\n"
+            f"<required_language>{language.value}</required_language>\n\n"
+            f"<problems>\n{problem_list}\n</problems>"
+        )
+        data, usage = self._model.call(self._system, user, REVISE_SCHEMA)
+        draft = data.get("draft_reply")
+        if not isinstance(draft, str):
+            raise ModelError("revised draft does not fit the schema", usage.cost_usd)
+        return ModelResult(value=draft, usage=usage)
+
+
+def format_articles(articles: list[FaqArticle]) -> str:
+    article_text = "\n\n".join(f"## {a.id} · {a.title}\n{a.text}" for a in articles)
+    return f"<help_centre_articles>\n{article_text}\n</help_centre_articles>"
 
 
 def format_ticket(ticket: Ticket) -> str:
@@ -187,5 +219,12 @@ VERIFY_SCHEMA: dict[str, Any] = {
         "answers_question": {"type": "boolean"},
     },
     "required": ["back_translation", "reply_language", "unsupported_claims", "answers_question"],
+    "additionalProperties": False,
+}
+
+REVISE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"draft_reply": {"type": "string"}},
+    "required": ["draft_reply"],
     "additionalProperties": False,
 }

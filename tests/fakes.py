@@ -183,10 +183,19 @@ class FakeAssessor:
 
 
 class FakeVerifier:
-    def __init__(self, problems: tuple[str, ...] = (), cost: float = 0.0005):
+    """Reports `problems` on every call, or only on the first `failing_calls` calls."""
+
+    def __init__(
+        self,
+        problems: tuple[str, ...] = (),
+        cost: float = 0.0005,
+        failing_calls: int | None = None,
+    ):
         self._problems = problems
         self._cost = cost
+        self._failing_calls = failing_calls
         self.calls = 0
+        self.drafts: list[str] = []
 
     def verify(
         self,
@@ -196,13 +205,37 @@ class FakeVerifier:
         articles: list[FaqArticle],
     ) -> ModelResult[ReplyCheck]:
         self.calls += 1
+        self.drafts.append(draft_reply)
+        failing = self._failing_calls is None or self.calls <= self._failing_calls
+        problems = self._problems if failing else ()
         check = ReplyCheck(
             reply_language=expected_language.value,
             back_translation="Hi Anouk, go to Team → Add employee ...",
-            answers_question=not self._problems,
-            problems=self._problems,
+            answers_question=not problems,
+            problems=problems,
         )
         return ModelResult(check, Usage(cost_usd=self._cost, calls=1))
+
+
+class FakeReviser:
+    """Returns `new_draft`, or the old draft unchanged when none is given."""
+
+    def __init__(self, new_draft: str | None = None, cost: float = 0.0005):
+        self._new_draft = new_draft
+        self._cost = cost
+        self.problems_seen: list[list[str]] = []
+
+    def revise(
+        self,
+        ticket: Ticket,
+        draft_reply: str,
+        language: Language,
+        articles: list[FaqArticle],
+        problems: list[str],
+    ) -> ModelResult[str]:
+        self.problems_seen.append(problems)
+        draft = self._new_draft if self._new_draft is not None else draft_reply
+        return ModelResult(draft, Usage(cost_usd=self._cost, calls=1))
 
 
 class ListRunLog:

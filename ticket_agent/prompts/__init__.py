@@ -5,8 +5,10 @@ from __future__ import annotations
 from importlib.resources import files
 
 # v2: the action follows whether the FAQ answers the ticket, not its category (see README).
-ASSESS_PROMPT = "assess_v2.md"
+# v3: an idea or feature request is answered by the ideas article (roadmap link).
+ASSESS_PROMPT = "assess_v3.md"
 VERIFY_PROMPT = "verify_v1.md"
+REVISE_PROMPT = "revise_v1.md"
 
 
 def load_prompt(name: str) -> str:
