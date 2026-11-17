@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+# Local resume cache. Logs and eval results ARE committed (the brief asks for them).
+state/
+.DS_Store
