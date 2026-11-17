@@ -142,8 +142,9 @@ class EvalReport:
             and r.outcome.assessment
             and r.label.faq_ids <= set(r.outcome.assessment.faq_ids)
         )
-        cost = sum(r.outcome.usage.cost_usd for r in self.results if r.outcome)
-        decided = sum(1 for r in self.results if r.outcome)
+        usages = [r.outcome.usage for r in self.results if r.outcome]
+        cost = sum(u.cost_usd for u in usages)
+        decided = len(usages)
         return {
             "examples": total,
             "errors": total - decided,
@@ -153,6 +154,9 @@ class EvalReport:
             "accuracy": {k: f"{v}/{total}" for k, v in accuracy.items()},
             "replies_in_right_language": f"{reply_language_ok}/{len(replies)}",
             "faq_article_match": f"{faq_match}/{len(faq_cases)}",
+            "model_calls": sum(u.calls for u in usages),
+            "tokens_in": sum(u.input_tokens + u.cache_read_tokens for u in usages),
+            "tokens_out": sum(u.output_tokens for u in usages),
             "cost_usd_total": round(cost, 6),
             "cost_usd_per_100_tickets": round(cost / decided * 100, 4) if decided else None,
         }

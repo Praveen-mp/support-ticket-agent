@@ -1,0 +1,417 @@
+{
+  "created_at": "2026-11-17T16:59:32+00:00",
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "prompts": [
+    "assess_v2.md",
+    "verify_v1.md"
+  ],
+  "effort": "low",
+  "summary": {
+    "examples": 10,
+    "errors": 0,
+    "unsafe_replies": 0,
+    "wrong_closes": 0,
+    "missed_replies": 4,
+    "accuracy": {
+      "language": "10/10",
+      "category": "8/10",
+      "priority": "8/10",
+      "action": "6/10"
+    },
+    "replies_in_right_language": "2/2",
+    "faq_article_match": "4/6",
+    "model_calls": 13,
+    "tokens_in": 27177,
+    "tokens_out": 3582,
+    "cost_usd_total": 0.004959,
+    "cost_usd_per_100_tickets": 0.0496
+  },
+  "examples": [
+    {
+      "id": "E01",
+      "expected": {
+        "language": "en",
+        "category": "bug",
+        "priority": "P3",
+        "action": "reply",
+        "reason": "English ticket. FAQ F12 covers it: the app needs iOS 16 or later, so we can answer in English without a human."
+      },
+      "predicted": {
+        "ticket_id": "E01",
+        "action": "handoff",
+        "language": "en",
+        "category": "bug",
+        "priority": "P2",
+        "reason": "The issue is a product bug (app crash) not covered by the FAQ, requiring a human to investigate. Priority P2: A single user is blocked from using the app.",
+        "handoff_note": "Customer reports the Roosterly app crashes on iPhone 8 with iOS 15, while other staff are unaffected. This is a bug that needs investigation by support/engineering.",
+        "confidence": 0.97
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": false,
+        "action": false
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": true,
+      "faq_ids_predicted": [],
+      "model_proposed": "handoff",
+      "policy_notes": [],
+      "reply_check": null,
+      "cost_usd": 0.000445,
+      "error": ""
+    },
+    {
+      "id": "E02",
+      "expected": {
+        "language": "nl",
+        "category": "billing",
+        "priority": "P4",
+        "action": "reply",
+        "reason": "How to change invoice details is in FAQ F06. Reply in Dutch."
+      },
+      "predicted": {
+        "ticket_id": "E02",
+        "action": "reply",
+        "language": "nl",
+        "category": "billing",
+        "priority": "P3",
+        "reason": "The request is covered by FAQ F06 which explains how to change VAT number under Instellingen → Bedrijfsgegevens. No sensitive topics, so a reply can be sent. Priority P3: Request to update VAT number on future invoices, not urgent.",
+        "draft_reply": "Beste,\n\nU kunt het btw-nummer aanpassen voor toekomstige facturen via Instellingen → Bedrijfsgegevens. Voer daar het nieuwe btw-nummer in en de wijzigingen worden meegenomen in de komende facturen.\n\nMet vriendelijke groet,\nTeam Roosterly",
+        "confidence": 0.98
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": false,
+        "action": true
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": false,
+      "faq_ids_predicted": [
+        "F06"
+      ],
+      "model_proposed": "reply",
+      "policy_notes": [],
+      "reply_check": {
+        "reply_language": "nl",
+        "back_translation": "Dear,\nYou can adjust the VAT number for future invoices via Settings → Company details. Enter the new VAT number there and the changes will be applied to the upcoming invoices.\nKind regards,\nTeam Roosterly",
+        "unsupported_claims": [],
+        "answers_question": true,
+        "problems": []
+      },
+      "cost_usd": 0.000784,
+      "error": ""
+    },
+    {
+      "id": "E03",
+      "expected": {
+        "language": "nl",
+        "category": "billing",
+        "priority": "P2",
+        "action": "handoff",
+        "reason": "Refund request ('terugkrijgen' = get back). Client rule: refunds always go to a human."
+      },
+      "predicted": {
+        "ticket_id": "E03",
+        "action": "handoff",
+        "language": "nl",
+        "category": "billing",
+        "priority": "P2",
+        "reason": "The request concerns a refund, which according to the rules must be handled by a human. Priority P2: Customer is requesting a refund, which is a sensitive billing issue.",
+        "handoff_note": "Customer requests a refund for the month of August due to being closed for renovations. This is a refund request and must be escalated to a human agent.\n\nWhy a human: always-human topic: refund_or_disputed_charge.",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": true,
+        "action": true
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": false,
+      "faq_ids_predicted": [],
+      "model_proposed": "handoff",
+      "policy_notes": [
+        "always-human topic: refund_or_disputed_charge"
+      ],
+      "reply_check": null,
+      "cost_usd": 0.00042,
+      "error": ""
+    },
+    {
+      "id": "E04",
+      "expected": {
+        "language": "nl",
+        "category": "question",
+        "priority": "P4",
+        "action": "reply",
+        "reason": "Dutch how-to question about swapping shifts, answered by FAQ F03. Reply in Dutch."
+      },
+      "predicted": {
+        "ticket_id": "E04",
+        "action": "reply",
+        "language": "nl",
+        "category": "question",
+        "priority": "P4",
+        "reason": "The question is answered by FAQ F03 about swapping shifts, no sensitive topics, and it is a low‑urgency how‑to request. Priority P4: Simple how‑to question with no urgency.",
+        "draft_reply": "Hallo,\n\nOm een dienst te ruilen, opent u de dienst in de app en tikt u op \"Ruil aanbieden\". Collega’s met dezelfde functie kunnen vervolgens de ruil accepteren. De manager keurt de ruil daarna goed onder Rooster → Verzoeken. De manager‑goedkeuring is standaard aan staan; u kunt dit uitschakelen via Instellingen → Rooster.\n\nMet vriendelijke groet,\nTeam Roosterly",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": true,
+        "action": true
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": false,
+      "faq_ids_predicted": [
+        "F03"
+      ],
+      "model_proposed": "reply",
+      "policy_notes": [],
+      "reply_check": {
+        "reply_language": "nl",
+        "back_translation": "Hello,\nTo swap a shift, you open the shift in the app and tap \"Offer swap\".\nColleagues with the same role can then accept the swap.\nThe manager approves the swap thereafter under Rota → Requests.\nManager approval is on by default; you can disable it via Settings → Rota.\nKind regards,\nTeam Roosterly",
+        "unsupported_claims": [],
+        "answers_question": true,
+        "problems": []
+      },
+      "cost_usd": 0.000764,
+      "error": ""
+    },
+    {
+      "id": "E05",
+      "expected": {
+        "language": "nl",
+        "category": "feature_request",
+        "priority": "P4",
+        "action": "reply",
+        "reason": "Feature request (Google Calendar sync). Acknowledge in Dutch and point to the roadmap (F10)."
+      },
+      "predicted": {
+        "ticket_id": "E05",
+        "action": "handoff",
+        "language": "nl",
+        "category": "feature_request",
+        "priority": "P4",
+        "reason": "The request is for a Google Calendar integration, which is not covered by any FAQ article. It is a feature request, not urgent, and requires a human to consider. Priority P4: It's a non‑urgent request for a new feature.",
+        "handoff_note": "Customer asks for a Google Calendar integration for shift planning. No existing FAQ covers this. Forward to product team to evaluate as a feature request.",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": true,
+        "action": false
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": true,
+      "faq_ids_predicted": [],
+      "model_proposed": "handoff",
+      "policy_notes": [],
+      "reply_check": null,
+      "cost_usd": 0.000349,
+      "error": ""
+    },
+    {
+      "id": "E06",
+      "expected": {
+        "language": "en",
+        "category": "bug",
+        "priority": "P2",
+        "action": "handoff",
+        "reason": "One customer blocked from publishing: P2, needs an engineer."
+      },
+      "predicted": {
+        "ticket_id": "E06",
+        "action": "handoff",
+        "language": "en",
+        "category": "bug",
+        "priority": "P2",
+        "reason": "The issue is a product bug not covered by the FAQ; needs human investigation. Priority P2: Customer is blocked from publishing a rota, affecting staff scheduling.",
+        "handoff_note": "User cannot publish the rota and gets a 'Something went wrong' error, preventing staff from seeing next week's schedule. Investigate the publishing error and resolve.",
+        "confidence": 0.98
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": true,
+        "action": true
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": false,
+      "faq_ids_predicted": [],
+      "model_proposed": "handoff",
+      "policy_notes": [],
+      "reply_check": null,
+      "cost_usd": 0.00046,
+      "error": ""
+    },
+    {
+      "id": "E07",
+      "expected": {
+        "language": "nl",
+        "category": "billing",
+        "priority": "P4",
+        "action": "reply",
+        "reason": "Price question answered by F05 (25 x €6 = €150 excl. VAT). Reply in Dutch."
+      },
+      "predicted": {
+        "ticket_id": "E07",
+        "action": "handoff",
+        "language": "nl",
+        "category": "question",
+        "priority": "P4",
+        "reason": "The FAQ F05 explains the Plus plan price per active employee, which answers the customer's question. Sent to a human by policy. Priority P4: Simple pricing inquiry, no urgency.",
+        "handoff_note": "The customer asks how much the Plus plan costs for 25 employees.\n\nWhy a human: auto-reply blocked: draft has numbers not in the cited FAQ: 150.",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": false,
+        "priority": true,
+        "action": false
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": true,
+      "faq_ids_predicted": [
+        "F05"
+      ],
+      "model_proposed": "reply",
+      "policy_notes": [
+        "auto-reply blocked: draft has numbers not in the cited FAQ: 150"
+      ],
+      "reply_check": null,
+      "cost_usd": 0.00039,
+      "error": ""
+    },
+    {
+      "id": "E08",
+      "expected": {
+        "language": "nl",
+        "category": "other",
+        "priority": "P4",
+        "action": "close",
+        "reason": "Spam (crypto offer): close it."
+      },
+      "predicted": {
+        "ticket_id": "E08",
+        "action": "close",
+        "language": "nl",
+        "category": "other",
+        "priority": "P4",
+        "reason": "The ticket is clearly spam advertising a crypto fund, not a Roosterly related question. Priority P4: The message is unsolicited advertising and has no relevance to Roosterly.",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": true,
+        "action": true
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": false,
+      "faq_ids_predicted": [],
+      "model_proposed": "close",
+      "policy_notes": [],
+      "reply_check": null,
+      "cost_usd": 0.00031,
+      "error": ""
+    },
+    {
+      "id": "E09",
+      "expected": {
+        "language": "nl",
+        "category": "other",
+        "priority": "P2",
+        "action": "handoff",
+        "reason": "GDPR access request ('inzageverzoek', AVG = Dutch GDPR): always a human."
+      },
+      "predicted": {
+        "ticket_id": "E09",
+        "action": "handoff",
+        "language": "nl",
+        "category": "question",
+        "priority": "P2",
+        "reason": "The request is a personal data request (AVG) which must be handled by a human according to the rules. No FAQ covers this request. Priority P2: Customer is requesting personal data, which requires a human handling.",
+        "handoff_note": "Customer requests access to all personal data stored about them (AVG request). This is a personal data request and must be escalated to a human agent.\n\nWhy a human: always-human topic: personal_data_request.",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": false,
+        "priority": true,
+        "action": true
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": false,
+      "faq_ids_predicted": [],
+      "model_proposed": "handoff",
+      "policy_notes": [
+        "always-human topic: personal_data_request"
+      ],
+      "reply_check": null,
+      "cost_usd": 0.000347,
+      "error": ""
+    },
+    {
+      "id": "E10",
+      "expected": {
+        "language": "nl",
+        "category": "question",
+        "priority": "P4",
+        "action": "reply",
+        "reason": "Asks about planned maintenance tonight. Point to the status page (F11), in Dutch."
+      },
+      "predicted": {
+        "ticket_id": "E10",
+        "action": "handoff",
+        "language": "nl",
+        "category": "question",
+        "priority": "P4",
+        "reason": "The question is answered by FAQ F11, which tells the customer to check status.roosterly.nl for planned maintenance. No sensitive topics are present. Sent to a human by policy. Priority P4: Non‑urgent inquiry about planned maintenance.",
+        "handoff_note": "The customer asks if there is any maintenance scheduled for tonight.\n\nWhy a human: auto-reply blocked: reply check: reply does not answer the customer's question.",
+        "confidence": 0.99
+      },
+      "matches": {
+        "language": true,
+        "category": true,
+        "priority": true,
+        "action": false
+      },
+      "unsafe_reply": false,
+      "wrong_close": false,
+      "missed_reply": true,
+      "faq_ids_predicted": [
+        "F11"
+      ],
+      "model_proposed": "reply",
+      "policy_notes": [
+        "auto-reply blocked: reply check: reply does not answer the customer's question"
+      ],
+      "reply_check": {
+        "reply_language": "nl",
+        "back_translation": "Hello,\nYou can view planned maintenance work at status.roosterly.nl. There, current and planned notifications are listed.\nKind regards,\nTeam Roosterly",
+        "unsupported_claims": [],
+        "answers_question": false,
+        "problems": [
+          "reply does not answer the customer's question"
+        ]
+      },
+      "cost_usd": 0.00069,
+      "error": ""
+    }
+  ]
+}
