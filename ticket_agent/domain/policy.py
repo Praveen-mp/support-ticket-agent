@@ -174,17 +174,6 @@ class TicketPolicy:
         note = f"language corrected from {assessment.language} to {observed} by text check"
         return assessment.model_copy(update={"language": observed}), note
 
-    def reply_blockers(
-        self,
-        ticket: Ticket,
-        assessment: Assessment,
-        keyword_topics: frozenset[SensitiveTopic],
-    ) -> list[str]:
-        """Every reason why the proposed reply must not be sent. Empty list means it may be."""
-        return self.eligibility_blockers(assessment, keyword_topics) + self.draft_problems(
-            ticket, assessment
-        )
-
     def eligibility_blockers(
         self, assessment: Assessment, keyword_topics: frozenset[SensitiveTopic]
     ) -> list[str]:

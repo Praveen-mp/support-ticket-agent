@@ -14,7 +14,9 @@ def policy() -> TicketPolicy:
 
 def _decide(policy, assessment, ticket=TICKET):
     keyword_topics = detect_sensitive_topics(f"{ticket.subject}\n{ticket.body}")
-    blockers = policy.reply_blockers(ticket, assessment, keyword_topics)
+    blockers = policy.eligibility_blockers(assessment, keyword_topics) + policy.draft_problems(
+        ticket, assessment
+    )
     return policy.decide(ticket, assessment, keyword_topics, blockers), blockers
 
 
